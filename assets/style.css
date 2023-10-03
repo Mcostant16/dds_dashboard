@@ -20,11 +20,12 @@ body {
 .right_header2 {
 		/*color: white;
 		/*float: right; */
-		 padding-right: 100px;
-    padding-left: 100px;
+	padding-right: 50px;
+    padding-left: 50px;
 	 /* background-color: white; */
-	  color:#ffff00;
+	  color:#000000;
 	  bordercolor: white;
+	  white-space:nowrap;
 }
 
 .header-title {
@@ -53,6 +54,16 @@ body {
 
 .card {
     margin-bottom: 24px;
+    box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.18);
+}
+
+.cards-side {
+	display: flex;
+    justify-content: space-evenly;
+}
+.card-row {
+	margin-left: 24px;
+	margin-bottom: 24px;
     box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.18);
 }
 

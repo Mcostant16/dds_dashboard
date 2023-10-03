@@ -1,5 +1,5 @@
 import pandas as pd
-from datetime import date
+from datetime import date, timedelta
 from sqlalchemy import create_engine
 import plotly
 import random
@@ -17,22 +17,8 @@ sqlEngine       = create_engine(myconfig.connection_str, pool_recycle=3600)
 dbConnection    = sqlEngine.connect()
 
 # Override Yahoo Finance 
-yf.pdr_override()
-
-# Create input field for our desired stock 
-
-# Retrieve stock data frame (df) from yfinance API at an interval of 1m 
-macd_df = yf.download(tickers='AAPL',period='1d',interval='1m')
-
-macd_df['MA5'] = macd_df['Close'].rolling(window=5).mean()
-macd_df['MA20'] = macd_df['Close'].rolling(window=20).mean()
 
 
-# MACD
-macd = MACD(close=macd_df['Close'], 
-            window_slow=26,
-            window_fast=12, 
-            window_sign=9)
 
 '''
 conn = mysql.connector.connect(
@@ -100,7 +86,24 @@ def generate_query(chart_symbol, start_date, end_date):
     return history_data.query(
             "Symbol == @chart_symbol"
             " and Date >= @start_date and Date <= @end_date")
-def macd_graph():
+def macd_graph(macd_symbol,start_d,end_d):
+    yf.pdr_override()
+
+# Create input field for our desired stock 
+
+# Retrieve stock data frame (df) from yfinance API at an interval of 1m 
+   # macd_df = yf.download(tickers='AAPL',period='1y',interval='1d')
+    macd_df = yf.download(tickers=macd_symbol,start = start_d, end = end_d, interval='1d')
+
+#macd_df['MA5'] = macd_df['Close'].rolling(window=5).mean()
+#macd_df['MA20'] = macd_df['Close'].rolling(window=20).mean()
+
+#print(macd_df)
+# MACD
+    macd = MACD(close=macd_df['Close'], 
+                window_slow=26,
+                window_fast=12, 
+                window_sign=9)
     fig = go.Figure()
     colorsM = ['green' if val >= 0 
             else 'red' for val in macd.macd_diff()]
@@ -185,7 +188,7 @@ app.layout = html.Div(
         html.Div(
             children=[
                # html.P(children="🥑", className="header-emoji"),
-                dcc.Input(id='num', type='number', debounce=True, min=2, step=1),
+                #dcc.Input(id='num', type='number', debounce=True, min=2, step=1),
                 html.H1(
                     children="Stock Analysis", className="header-title"
                 ),
@@ -196,13 +199,6 @@ app.layout = html.Div(
                     ),
                     className="header-description",
                 ),
-                html.P(
-                 
-                         # generate_table(df)
-                         id="stock-table",
-                  
-                    className="right_header2",
-                )
             ],
             className="header",
         ),
@@ -252,7 +248,7 @@ app.layout = html.Div(
                             id="date-range",
                             min_date_allowed=date(1980,1,1),
                             max_date_allowed=date.today(),
-                            start_date=date.today() - pd.DateOffset(years=5),
+                            start_date=date.today() - timedelta(days=365),
                             end_date=date.today(),
                         ),
                     ]
@@ -261,26 +257,34 @@ app.layout = html.Div(
             className="menu",
         ),
         html.Div(
-            children=[
-                html.Div(
+            children=[ html.Div(children=[
+                html.Div( 
                     children=dcc.Graph(
                         id="price-chart",
                         config={"displayModeBar": False},
                     ),
-                    className="card",
+                    className="card-row",
+                ),
+                html.P(
+                 
+                        # generate_table(df)
+                        id="stock-table",
+                  
+                    className="right_header2 card-row",
                 ),
                 html.Div(
                     children=dcc.Graph(
                         id="volume-chart",
                         config={"displayModeBar": False},
                     ),
-                    className="card",
+                    className="card-row",
                 ),
+            ], className="cards-side"),
                  html.Div(
                     children=dcc.Graph(
                         id="macd-chart",
                         config={"displayModeBar": False},
-                        figure=macd_graph(),
+                       # figure=macd_graph(),
                     ),
                     className="card",
                 ),
@@ -297,6 +301,7 @@ dbConnection.close()
 @app.callback(
     Output("price-chart", "figure"),
     Output("volume-chart", "figure"),
+    Output("macd-chart", "figure"),
     Input("region-filter", "value"),
     Input("type-filter", "value"),
     Input("date-range", "start_date"),
@@ -304,7 +309,7 @@ dbConnection.close()
 )
 def update_charts(symbol, avocado_type, start_date, end_date):
     filtered_data = generate_query(symbol, start_date, end_date)
-    print(filtered_data)
+    macd_chart = macd_graph(symbol, start_date, end_date)
     price_chart_figure = {
         "data": [
             {
@@ -341,7 +346,7 @@ def update_charts(symbol, avocado_type, start_date, end_date):
             "colorway": ["#E12D39"],
         },
     }
-    return price_chart_figure, volume_chart_figure
+    return price_chart_figure, volume_chart_figure , macd_chart 
 
 @app.callback(
     Output("stock-table", "children"),
