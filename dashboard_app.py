@@ -47,7 +47,7 @@ st = "AAPL"
 query = '''
 select Ov1.*,
 Round(SQRT(22.5 * Ov1.EPS * Ov1.BookValue),2) Graham_Number,
-Round(SQRT(22.5 * Ov1.EPS * Ov1.BookValue),2) - Ov1.`52WeekLow` Value_Stocks
+Round(SQRT(22.5 * Ov1.EPS * Ov1.BookValue) - Ov1.`52WeekLow`,2) Value_Stocks
 from overview Ov1
 Inner Join 
 (select Symbol, Max(LatestQuarter) Max_Quarter from overview Group By Symbol) Max_Quarter_Qry
@@ -140,10 +140,10 @@ def generate_table(qry_symbol, max_rows=26):
         "Symbol == @qry_symbol"
     )
     #idx = filtered_o_data.groupby('Symbol')['PERatio'].idxmax()
-    max_overview = filtered_o_data.loc[filtered_o_data.groupby('Symbol')['LatestQuarter'].transform(max) == filtered_o_data['LatestQuarter']]
+    #max_overview = filtered_o_data.loc[filtered_o_data.groupby('Symbol')['LatestQuarter'].transform(max) == filtered_o_data['LatestQuarter']]
     #max_overview = filtered_o_data.loc[idx]
     print(filtered_o_data)
-    table_overview = max_overview[['Symbol','Exchange', 'LatestQuarter', 'PERatio', 'PEGRatio', 'EPS','PriceToBookRatio', 'Beta','50DayMovingAverage','200DayMovingAverage']].stack()
+    table_overview = filtered_o_data[['Symbol','Exchange', 'LatestQuarter', 'PERatio', 'PEGRatio', 'EPS','PriceToBookRatio', 'Beta', 'Graham_Number', 'Value_Stocks', '50DayMovingAverage','200DayMovingAverage']].stack()
     #table_overview.reset_index()
     todf = table_overview.reset_index(level=1)
     print(table_overview.reset_index(level=1))
