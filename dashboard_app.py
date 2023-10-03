@@ -4,14 +4,15 @@ from sqlalchemy import create_engine
 import plotly
 import random
 import plotly.graph_objs as go
-import pymysql
+#import pymysql
 from ta.trend import MACD
+import myconfig
 import yfinance as yf
 ### import mysql.connector
 from dash import Dash, Input, Output, dcc, html
 
 
-sqlEngine       = create_engine('mysql+pymysql://root:@127.0.0.1/stock', pool_recycle=3600)
+sqlEngine       = create_engine(myconfig.connection_str, pool_recycle=3600)
 
 dbConnection    = sqlEngine.connect()
 
@@ -43,7 +44,14 @@ conn = mysql.connector.connect(
 '''
 st = "AAPL"
 ##query = "SELECT * FROM overview where Symbol = %s "
-query = "SELECT DISTINCT * FROM overview"
+query = '''
+select Ov1.*,
+Round(SQRT(22.5 * Ov1.EPS * Ov1.BookValue),2) Graham_Number,
+Round(SQRT(22.5 * Ov1.EPS * Ov1.BookValue),2) - Ov1.`52WeekLow` Value_Stocks
+from overview Ov1
+Inner Join 
+(select Symbol, Max(LatestQuarter) Max_Quarter from overview Group By Symbol) Max_Quarter_Qry
+On Max_Quarter_Qry.Max_Quarter = Ov1.LatestQuarter and Max_Quarter_Qry.Symbol = Ov1.Symbol '''
 query_sp = "SELECT * FROM sandp"
 query_history = "SELECT * FROM history"
 ##df = pd.read_sql(query, dbConnection, params=(st,))
@@ -80,7 +88,7 @@ def datepickerfunc(datedata):
     datepickerdata = datedata
 
 def generate_query(chart_symbol, start_date, end_date):
-    sqlEngine       = create_engine('mysql+pymysql://root:@127.0.0.1/stock', pool_recycle=3600)
+    sqlEngine       = create_engine(myconfig.connection_str, pool_recycle=3600)
 
     dbConnection    = sqlEngine.connect()
 
@@ -135,7 +143,7 @@ def generate_table(qry_symbol, max_rows=26):
     max_overview = filtered_o_data.loc[filtered_o_data.groupby('Symbol')['LatestQuarter'].transform(max) == filtered_o_data['LatestQuarter']]
     #max_overview = filtered_o_data.loc[idx]
     print(filtered_o_data)
-    table_overview = max_overview[['Symbol','Exchange', 'LatestQuarter', 'PERatio', 'PEGRatio', 'EPS','PriceToBookRatio','50DayMovingAverage','200DayMovingAverage']].stack()
+    table_overview = max_overview[['Symbol','Exchange', 'LatestQuarter', 'PERatio', 'PEGRatio', 'EPS','PriceToBookRatio', 'Beta','50DayMovingAverage','200DayMovingAverage']].stack()
     #table_overview.reset_index()
     todf = table_overview.reset_index(level=1)
     print(table_overview.reset_index(level=1))
