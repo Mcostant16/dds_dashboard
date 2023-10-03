@@ -55,20 +55,7 @@ data = (
 )
 datepickerdata = pd.read_sql(query, dbConnection)
 
-class Geek():
-    def __init__(self, dataframe):
-         self.dataframe = dataframe
-      
-    # getter method
-    def get_age(self):
-        return (self.dataframe)
-      
-    # setter method
-    def set_age(self, x):
-        self.dataframe = x
 
-
-my_history_data = Geek(data)
 
 def datepickerfunc(datedata):
     datepickerdata = datedata
@@ -82,7 +69,6 @@ def generate_query(chart_symbol, start_date, end_date):
     df_history  = pd.read_sql(query, dbConnection, params=(chart_symbol,))
     history_data = (df_history.assign(Date=lambda data: pd.to_datetime(data["Date"], format="%Y-%m-%d")).sort_values(by="Date")) 
  
-    my_history_data.set_age(history_data)
     return history_data.query(
             "Symbol == @chart_symbol"
             " and Date >= @start_date and Date <= @end_date")
@@ -109,29 +95,21 @@ def macd_graph(macd_symbol,start_d,end_d):
             else 'red' for val in macd.macd_diff()]
     fig.add_trace(go.Bar(x=macd_df.index, 
                         y=macd.macd_diff(),
-                        marker_color=colorsM
+                        marker_color=colorsM,
+                         name="Historgram"
                         ))
     fig.add_trace(go.Scatter(x=macd_df.index,
                          y=macd.macd(),
-                         line=dict(color='black', width=2)
+                         line=dict(color='black', width=2),
+                          name="MACD"
                         ))
     fig.add_trace(go.Scatter(x=macd_df.index,
                          y=macd.macd_signal(),
-                         line=dict(color='blue', width=1)
+                         line=dict(color='blue', width=1),
+                         name="Signal"
                         ))
-    fig.update_xaxes(
-        rangeslider_visible=False,
-        rangeselector_visible=False,
-        rangeselector=dict(
-            buttons=list([
-                dict(count=15, label="15m", step="minute", stepmode="backward"),
-                dict(count=45, label="45m", step="minute", stepmode="backward"),
-                dict(count=1, label="HTD", step="hour", stepmode="todate"),
-                dict(count=3, label="3h", step="hour", stepmode="backward"),
-                dict(step="all")
-            ])
-        )
-    )
+    fig.update_layout(title='MACD for ' + macd_symbol)
+
     return fig
     #fig.show()
 

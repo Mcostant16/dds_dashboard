@@ -6,7 +6,7 @@ body {
 
 .header {
     background-color: #222222;
-    height: 288px;
+    height: 90px;
     padding: 16px 0 0 0;
 	display: flex;
 }
@@ -25,6 +25,7 @@ body {
 	 /* background-color: white; */
 	  color:#000000;
 	  bordercolor: white;
+	  white-space:nowrap;
 }
 
 .header-title {
