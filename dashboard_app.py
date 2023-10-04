@@ -72,6 +72,7 @@ def generate_query(chart_symbol, start_date, end_date):
     return history_data.query(
             "Symbol == @chart_symbol"
             " and Date >= @start_date and Date <= @end_date")
+
 def macd_graph(macd_symbol,start_d,end_d):
     yf.pdr_override()
 
@@ -116,18 +117,18 @@ def macd_graph(macd_symbol,start_d,end_d):
 def generate_table(qry_symbol, max_rows=26):
     data3 = {'Cap' : ['A', 'B', 'C', ], 'non-Cap' : ['a','b','c', ]}
     df = pd.DataFrame(data3)
-    print(df)
+    #print(df)
     filtered_o_data = overviewData.query(
         "Symbol == @qry_symbol"
     )
     #idx = filtered_o_data.groupby('Symbol')['PERatio'].idxmax()
     #max_overview = filtered_o_data.loc[filtered_o_data.groupby('Symbol')['LatestQuarter'].transform(max) == filtered_o_data['LatestQuarter']]
     #max_overview = filtered_o_data.loc[idx]
-    print(filtered_o_data)
+    #print(filtered_o_data)
     table_overview = filtered_o_data[['Symbol','Exchange', 'LatestQuarter', 'PERatio', 'PEGRatio', 'EPS','PriceToBookRatio', 'Beta', 'Graham_Number', 'Value_Stocks', '50DayMovingAverage','200DayMovingAverage']].stack()
     #table_overview.reset_index()
     todf = table_overview.reset_index(level=1)
-    print(table_overview.reset_index(level=1))
+    #print(table_overview.reset_index(level=1))
     #i need to iterate through rows instead of columns now
     return html.Table(
         # Header
@@ -287,6 +288,10 @@ dbConnection.close()
 )
 def update_charts(symbol, avocado_type, start_date, end_date):
     filtered_data = generate_query(symbol, start_date, end_date)
+    begin_price = filtered_data["Adj_Close"].iloc[0]
+    end_price = filtered_data["Adj_Close"].iloc[-1] 
+    percent_return = str(round(((end_price - begin_price)/begin_price)*100,2)) + '%'
+    print(percent_return)
     macd_chart = macd_graph(symbol, start_date, end_date)
     price_chart_figure = {
         "data": [
