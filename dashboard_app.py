@@ -244,13 +244,14 @@ app.layout = html.Div(
                     ),
                     className="card-row",
                 ),
-                html.P(
-                 
+                html.Div(children=[
+                        html.P(
                         # generate_table(df)
                         id="stock-table",
-                  
-                    className="right_header2 card-row",
-                ),
+                        ),
+                        html.P(id="profit-value"), 
+                ],
+                className="right_header2 card-row"),
                 html.Div(
                     children=dcc.Graph(
                         id="volume-chart",
@@ -279,6 +280,8 @@ dbConnection.close()
 
 @app.callback(
     Output("price-chart", "figure"),
+    Output("profit-value", "children"),
+    Output("profit-value", "style"),
     Output("volume-chart", "figure"),
     Output("macd-chart", "figure"),
     Input("region-filter", "value"),
@@ -290,8 +293,15 @@ def update_charts(symbol, avocado_type, start_date, end_date):
     filtered_data = generate_query(symbol, start_date, end_date)
     begin_price = filtered_data["Adj_Close"].iloc[0]
     end_price = filtered_data["Adj_Close"].iloc[-1] 
-    percent_return = str(round(((end_price - begin_price)/begin_price)*100,2)) + '%'
+    percent_return = round(((end_price - begin_price)/begin_price)*100,2)
     print(percent_return)
+    
+    if percent_return > 0:
+        dynamic_style = {'color': 'green'}
+    else:
+        dynamic_style = {'color': 'red'}
+
+    profit_return_value = f"Profit: {percent_return}%"
     macd_chart = macd_graph(symbol, start_date, end_date)
     price_chart_figure = {
         "data": [
@@ -329,7 +339,7 @@ def update_charts(symbol, avocado_type, start_date, end_date):
             "colorway": ["#E12D39"],
         },
     }
-    return price_chart_figure, volume_chart_figure , macd_chart 
+    return price_chart_figure, profit_return_value, dynamic_style, volume_chart_figure , macd_chart 
 
 @app.callback(
     Output("stock-table", "children"),
