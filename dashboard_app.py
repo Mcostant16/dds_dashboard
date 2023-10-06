@@ -103,10 +103,20 @@ def generate_query(chart_symbol, start_date, end_date):
 
     dbConnection    = sqlEngine.connect()
 
-    query = "SELECT  * FROM history where Symbol = %s "
-    df_history  = pd.read_sql(query, dbConnection, params=(chart_symbol,))
+    query = "SELECT  distinct * FROM history where Symbol = %(symbol)s "
+    df_history  = pd.read_sql(query, dbConnection, params=({"symbol":chart_symbol}))
     history_data = (df_history.assign(Date=lambda data: pd.to_datetime(data["Date"], format="%Y-%m-%d")).sort_values(by="Date")) 
- 
+    print(history_data.groupby(pd.DatetimeIndex(history_data.Date).to_period('Y')).nth([0,-1]))
+    #begin_end_year = history_data.groupby(pd.DatetimeIndex(history_data.Date).to_period('Y')).nth([0,-1])
+    begin_year = history_data.groupby(pd.DatetimeIndex(history_data.Date).to_period('Y')).nth([0])
+    begin_year['Year'] = begin_year['Date'].dt.year
+    #begin_year = begin_year.loc[:,['Symbol','Adj_Close','Year']]
+    end_year = history_data.groupby(pd.DatetimeIndex(history_data.Date).to_period('Y')).nth([-1])
+    end_year['Year'] = end_year['Date'].dt.year
+    #end_year = end_year.loc[:,['Symbol','Adj_Close','Year']]
+    #begin_end_year['Adj_Close_diff'] = begin_end_year["Adj_Close"].diff()
+    merged_dataframe = pd.merge_asof(begin_year.iloc[:,['Symbol','Adj_Close','Year']],end_year,on="Year")
+    print(merged_dataframe)
     return history_data.query(
             "Symbol == @chart_symbol"
             " and Date >= @start_date and Date <= @end_date")
