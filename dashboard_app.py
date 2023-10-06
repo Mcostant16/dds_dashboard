@@ -55,6 +55,44 @@ data = (
 )
 datepickerdata = pd.read_sql(query, dbConnection)
 
+def profit_return(begin_date, end_date):
+    sqlEngine       = create_engine(myconfig.connection_str, pool_recycle=3600)
+
+    dbConnection    = sqlEngine.connect()
+
+    query = '''Select Distinct max_info.Symbol, max_info.Date, max_info.Adj_Close_Max, min_info.Date, min_info.Adj_Close_Min,
+            Round(((max_info.Adj_Close_Max-min_info.Adj_Close_Min)/min_info.Adj_Close_Min)*100,2) Profits
+            from 
+            (
+        select distinct h1.Symbol, h1.Date, Round(h1.Adj_close,3) Adj_Close_Max from history h1 
+		JOIN # Derived Query 1
+			(Select Symbol, max(date) max_date from history where DATE(Date) between %(dstart)s  and %(dfinish)s Group By Symbol) max_qry
+		On h1.Symbol = max_qry.Symbol and h1.Date = max_qry.max_date ) max_info
+            JOIN (Select Distinct Symbol from history ) Symbol # Derived Query 2
+            On max_info.Symbol = Symbol.Symbol #Join Derived Query 1 and 2
+        JOIN (select distinct h2.Symbol, h2.Date, Round(h2.Adj_close,3) Adj_Close_Min from history h2 
+		    JOIN # Derived Query 3
+			(Select Symbol, Date(min(date)) min_date from history where DATE(Date) between %(dstart)s  and %(dfinish)s Group By Symbol) min_qry
+		        On h2.Symbol = min_qry.Symbol and h2.Date = min_qry.min_date) min_info
+            On Symbol.Symbol = min_info.Symbol #Join the Derivery Qry 2 and 3
+            Order By 6 Desc
+            Limit 20'''
+    df_history  = pd.read_sql(query, dbConnection, params=({"dstart":begin_date,"dfinish":end_date}))
+    #history_data = (df_history.assign(Date=lambda data: pd.to_datetime(data["Date"], format="%Y-%m-%d")).sort_values(by="Date")) 
+    print(df_history)
+
+    bar_fig = go.Figure()
+    
+    bar_fig.add_trace(go.Bar(x=df_history['Symbol'], 
+                        y=df_history['Profits'],
+                        marker_color='green',
+                        name="Profit"
+                        ))
+    dbConnection.close()
+    
+    bar_fig.update_yaxes(ticksuffix="%")
+    return bar_fig
+
 
 
 def datepickerfunc(datedata):
@@ -185,6 +223,66 @@ app.layout = html.Div(
             children=[
                 html.Div(
                     children=[
+                        html.Div(children="KPI", className="menu-title"),
+                        dcc.Dropdown(
+                            id="kpi-filter",
+                            options=[
+                                {
+                                    "label": avocado_type.title(),
+                                    "value": avocado_type,
+                                }
+                                for avocado_type in avocado_types
+                            ],
+                            value="profit",
+                            clearable=False,
+                            searchable=False,
+                            className="dropdown",
+                        ),
+                    ],
+                ),
+                html.Div(
+                    children=[
+                        html.Div(
+                            children="KPI Date Range", className="menu-title"
+                        ),
+                        dcc.DatePickerRange(
+                            id="date-range-kpi",
+                            min_date_allowed=date(1980,1,1),
+                            max_date_allowed=date.today(),
+                            start_date=date.today() - timedelta(days=365),
+                            end_date=date.today(),
+                        ),
+                    ]
+                ),
+            ],
+            className="kpi-menu",
+        ),
+        html.Div(
+            children=[
+                 html.Div(
+                    children=dcc.Graph(
+                        id="profit-chart",
+                        config={"displayModeBar": False},
+                       # figure=macd_graph(),
+                    ),
+                    className="card",
+                ),
+            ],
+            className="wrapper",
+        ),
+        html.Div(children=[
+                        html.P("Some stuff to test"
+                        # generate_table(df)
+                        
+                        ),
+                        html.P("Some more Jargan"), 
+                ],
+                className="right_header2 card-row"),
+            
+        html.Div(
+            children=[
+                html.Div(
+                    children=[
                         html.Div(children="Symbol", className="menu-title"),
                         dcc.Dropdown(
                             id="region-filter",
@@ -276,6 +374,16 @@ app.layout = html.Div(
 
 dbConnection.close()
 
+@app.callback(
+    Output("profit-chart", "figure"),
+    Input("date-range-kpi", "start_date"),
+    Input("date-range-kpi", "end_date"),
+
+)
+
+def update_kpis(start_date, end_date): 
+    
+    return profit_return(start_date,end_date)
 
 
 @app.callback(
@@ -309,7 +417,7 @@ def update_charts(symbol, avocado_type, start_date, end_date):
                 "x": filtered_data["Date"],
                 "y": filtered_data["Adj_Close"],
                 "type": "lines",
-                "hovertemplate": "$%{y:.2f}<extra></extra>",
+               # "hovertemplate": "$%{y:.2f}<extra></extra>",
             },
         ],
         "layout": {

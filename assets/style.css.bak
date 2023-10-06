@@ -6,7 +6,7 @@ body {
 
 .header {
     background-color: #222222;
-    height: 90px;
+    height: 150px;
     padding: 16px 0 0 0;
 	display: flex;
 }
@@ -64,6 +64,16 @@ body {
 .card-row {
 	margin-left: 24px;
 	margin-bottom: 24px;
+    box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.18);
+}
+.kpi-menu {
+    height: 112px;
+    width: 700px;
+    display: flex;
+    justify-content: space-evenly;
+    padding-top: 24px;
+    margin: -80px auto 160px auto;
+    background-color: #FFFFFF;
     box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.18);
 }
 
