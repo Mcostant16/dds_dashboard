@@ -121,7 +121,7 @@ def generate_query(chart_symbol, years_back, start_date, end_date):
 
     print(merged_dataframe)
 
-    return_history = merged_dataframe.sort_values(by="Year",ascending=False).head(5)
+    return_history = merged_dataframe.sort_values(by="Year",ascending=False).head(int(years_back))
 
     average_return = round(return_history['Profits'].mean(),2)
 
