@@ -98,7 +98,7 @@ def profit_return(begin_date, end_date):
 def datepickerfunc(datedata):
     datepickerdata = datedata
 
-def generate_query(chart_symbol, start_date, end_date):
+def generate_query(chart_symbol, years_back, start_date, end_date):
     sqlEngine       = create_engine(myconfig.connection_str, pool_recycle=3600)
 
     dbConnection    = sqlEngine.connect()
@@ -106,20 +106,44 @@ def generate_query(chart_symbol, start_date, end_date):
     query = "SELECT  distinct * FROM history where Symbol = %(symbol)s "
     df_history  = pd.read_sql(query, dbConnection, params=({"symbol":chart_symbol}))
     history_data = (df_history.assign(Date=lambda data: pd.to_datetime(data["Date"], format="%Y-%m-%d")).sort_values(by="Date")) 
+    print(df_history)
     print(history_data.groupby(pd.DatetimeIndex(history_data.Date).to_period('Y')).nth([0,-1]))
     #begin_end_year = history_data.groupby(pd.DatetimeIndex(history_data.Date).to_period('Y')).nth([0,-1])
-    begin_year = history_data.groupby(pd.DatetimeIndex(history_data.Date).to_period('Y')).nth([0])
+    begin_year = history_data[['Symbol','Date','Adj_Close']].groupby(pd.DatetimeIndex(history_data.Date).to_period('Y')).nth([0]).copy()
     begin_year['Year'] = begin_year['Date'].dt.year
-    #begin_year = begin_year.loc[:,['Symbol','Adj_Close','Year']]
-    end_year = history_data.groupby(pd.DatetimeIndex(history_data.Date).to_period('Y')).nth([-1])
+    end_year = history_data[['Symbol','Date','Adj_Close']].groupby(pd.DatetimeIndex(history_data.Date).to_period('Y')).nth([-1]).copy()
     end_year['Year'] = end_year['Date'].dt.year
-    #end_year = end_year.loc[:,['Symbol','Adj_Close','Year']]
+
     #begin_end_year['Adj_Close_diff'] = begin_end_year["Adj_Close"].diff()
-    merged_dataframe = pd.merge_asof(begin_year.iloc[:,['Symbol','Adj_Close','Year']],end_year,on="Year")
+    merged_dataframe = pd.merge_asof(begin_year,end_year,on="Year")
+
+    merged_dataframe['Profits'] = ((merged_dataframe['Adj_Close_y'] - merged_dataframe['Adj_Close_x']) / merged_dataframe['Adj_Close_x'])*100
+
     print(merged_dataframe)
+
+    return_history = merged_dataframe.sort_values(by="Year",ascending=False).head(5)
+
+    average_return = round(return_history['Profits'].mean(),2)
+
+    print(average_return)
+
+    print(return_history)
+
+    annual_bar_fig = go.Figure()
+    
+    annual_bar_fig.add_trace(go.Bar(x=merged_dataframe['Year'], 
+                        y=merged_dataframe['Profits'],
+                        marker_color='green',
+                        name="Profit"
+                        ))
+    dbConnection.close()
+    
+    annual_bar_fig.update_yaxes(ticksuffix="%")
+
+    #return the query ,annual bar Figure , and average return variables from function to pass up to app components
     return history_data.query(
             "Symbol == @chart_symbol"
-            " and Date >= @start_date and Date <= @end_date")
+            " and Date >= @start_date and Date <= @end_date"), annual_bar_fig, average_return
 
 def macd_graph(macd_symbol,start_d,end_d):
     yf.pdr_override()
@@ -309,19 +333,21 @@ app.layout = html.Div(
                 ),
                 html.Div(
                     children=[
-                        html.Div(children="Type", className="menu-title"),
+                        html.Div(children="Return History", className="menu-title"),
                         dcc.Dropdown(
-                            id="type-filter",
-                            options=[
-                                {
-                                    "label": avocado_type.title(),
-                                    "value": avocado_type,
-                                }
-                                for avocado_type in avocado_types
-                            ],
-                            value="organic",
+                            id="return-filter",
+                            options={
+                                1: '1 Year',
+                                3: '3 Year',
+                                5: '5 Year',
+                                10: '10 Year',
+                                15: '15 Year',
+                                20: '20 Year',
+                                100 : 'Max'
+                            },
+                            value= 1,
                             clearable=False,
-                            searchable=False,
+                            #searchable=False,
                             className="dropdown",
                         ),
                     ],
@@ -358,6 +384,7 @@ app.layout = html.Div(
                         id="stock-table",
                         ),
                         html.P(id="profit-value"), 
+                        html.P(id="average-return"), 
                 ],
                 className="right_header2 card-row"),
                 html.Div(
@@ -368,14 +395,25 @@ app.layout = html.Div(
                     className="card-row",
                 ),
             ], className="cards-side"),
+                html.Div(children=[
                  html.Div(
                     children=dcc.Graph(
                         id="macd-chart",
                         config={"displayModeBar": False},
                        # figure=macd_graph(),
                     ),
-                    className="card",
-                ),
+                    className="card-row",
+                   ),
+                 html.Div(
+                    children=dcc.Graph(
+                        id="annual-p-chart",
+                        config={"displayModeBar": False},
+                       # figure=macd_graph(),
+                    ),
+                    className="card-row",
+                   ),  
+                ]
+               )
             ],
             className="wrapper",
         ),
@@ -400,15 +438,17 @@ def update_kpis(start_date, end_date):
     Output("price-chart", "figure"),
     Output("profit-value", "children"),
     Output("profit-value", "style"),
+    Output("average-return", "children"),
     Output("volume-chart", "figure"),
     Output("macd-chart", "figure"),
+    Output("annual-p-chart", "figure"),
     Input("region-filter", "value"),
-    Input("type-filter", "value"),
+    Input("return-filter", "value"),
     Input("date-range", "start_date"),
     Input("date-range", "end_date"),
 )
-def update_charts(symbol, avocado_type, start_date, end_date):
-    filtered_data = generate_query(symbol, start_date, end_date)
+def update_charts(symbol, years_return, start_date, end_date):
+    filtered_data, yearly_profit_bar, average_returns = generate_query(symbol, years_return, start_date, end_date)
     begin_price = filtered_data["Adj_Close"].iloc[0]
     end_price = filtered_data["Adj_Close"].iloc[-1] 
     percent_return = round(((end_price - begin_price)/begin_price)*100,2)
@@ -419,7 +459,8 @@ def update_charts(symbol, avocado_type, start_date, end_date):
     else:
         dynamic_style = {'color': 'red'}
 
-    profit_return_value = f"Profit: {percent_return}%"
+    profit_return_value = f"Date Range Return: {percent_return}%"
+    period_of_returns = f"The Average Return for {years_return} year(s) is {average_returns}%" 
     macd_chart = macd_graph(symbol, start_date, end_date)
     price_chart_figure = {
         "data": [
@@ -457,7 +498,7 @@ def update_charts(symbol, avocado_type, start_date, end_date):
             "colorway": ["#E12D39"],
         },
     }
-    return price_chart_figure, profit_return_value, dynamic_style, volume_chart_figure , macd_chart 
+    return price_chart_figure, profit_return_value, dynamic_style, period_of_returns, volume_chart_figure , macd_chart , yearly_profit_bar
 
 @app.callback(
     Output("stock-table", "children"),
