@@ -31,7 +31,7 @@ conn = mysql.connector.connect(
 st = "AAPL"
 ##query = "SELECT * FROM overview where Symbol = %s "
 query = '''
-select Ov1.*,
+select Distinct Ov1.*,
 Round(SQRT(22.5 * Ov1.EPS * Ov1.BookValue),2) Graham_Number,
 Round(SQRT(22.5 * Ov1.EPS * Ov1.BookValue) - Ov1.`52WeekLow`,2) Value_Stocks
 from overview Ov1
@@ -55,44 +55,83 @@ data = (
 )
 datepickerdata = pd.read_sql(query, dbConnection)
 
-def profit_return(begin_date, end_date):
-    sqlEngine       = create_engine(myconfig.connection_str, pool_recycle=3600)
+def profit_return(kpi_filter,begin_date, end_date):
+    overviewData[["PERatio", "PEGRatio",'PriceToBookRatio','Beta','Graham_Number']] = overviewData[["PERatio", "PEGRatio",'PriceToBookRatio','Beta','Graham_Number']].apply(pd.to_numeric, errors='coerce')
+    print(kpi_filter)
+    match kpi_filter:
 
-    dbConnection    = sqlEngine.connect()
+        case 'PERatio':
+            print("PERatio case statement")
+            top_20_kpi = overviewData[['Symbol','PERatio']].sort_values(by ='PERatio').head(20).copy()
+            top_20_kpi.columns = ["Symbol", "KPI"]
+            print(top_20_kpi)
+        case 'PEGRatio':
+            print("PEGRatio case statement 2nd is working!")
+            top_20_kpi = overviewData[['Symbol','PEGRatio']].sort_values(by ='PEGRatio',key=abs).head(20).copy()
+            top_20_kpi.columns = ["Symbol", "KPI"]
+        case 'PriceToBookRatio':
+            print("PEGRatio case statement 2nd is working!")
+            top_20_kpi = overviewData[['Symbol','PriceToBookRatio']].sort_values(by ='PriceToBookRatio').head(20).copy()
+            top_20_kpi.columns = ["Symbol", "KPI"]
+        case 'Beta':
+            print("PEGRatio case statement 2nd is working!")
+            top_20_kpi = overviewData[['Symbol','Beta']].sort_values(by ='Beta').head(20).copy()
+            top_20_kpi.columns = ["Symbol", "KPI"]  
+        case 'Graham_Number':
+            print("PEGRatio case statement 2nd is working!")
+            top_20_kpi = overviewData[['Symbol','Value_Stocks']].sort_values(by ='Value_Stocks', ascending=False).head(20).copy()
+            top_20_kpi.columns = ["Symbol", "KPI"]                   
+        case _:
 
-    query = '''Select Distinct max_info.Symbol, max_info.Date, max_info.Adj_Close_Max, min_info.Date, min_info.Adj_Close_Min,
-            Round(((max_info.Adj_Close_Max-min_info.Adj_Close_Min)/min_info.Adj_Close_Min)*100,2) Profits
-            from 
-            (
-        select distinct h1.Symbol, h1.Date, Round(h1.Adj_close,3) Adj_Close_Max from history h1 
-		JOIN # Derived Query 1
-			(Select Symbol, max(date) max_date from history where DATE(Date) between %(dstart)s  and %(dfinish)s Group By Symbol) max_qry
-		On h1.Symbol = max_qry.Symbol and h1.Date = max_qry.max_date ) max_info
-            JOIN (Select Distinct Symbol from history ) Symbol # Derived Query 2
-            On max_info.Symbol = Symbol.Symbol #Join Derived Query 1 and 2
-        JOIN (select distinct h2.Symbol, h2.Date, Round(h2.Adj_close,3) Adj_Close_Min from history h2 
-		    JOIN # Derived Query 3
-			(Select Symbol, Date(min(date)) min_date from history where DATE(Date) between %(dstart)s  and %(dfinish)s Group By Symbol) min_qry
-		        On h2.Symbol = min_qry.Symbol and h2.Date = min_qry.min_date) min_info
-            On Symbol.Symbol = min_info.Symbol #Join the Derivery Qry 2 and 3
-            Order By 6 Desc
-            Limit 20'''
-    df_history  = pd.read_sql(query, dbConnection, params=({"dstart":begin_date,"dfinish":end_date}))
-    #history_data = (df_history.assign(Date=lambda data: pd.to_datetime(data["Date"], format="%Y-%m-%d")).sort_values(by="Date")) 
-    print(df_history)
-
-    bar_fig = go.Figure()
     
-    bar_fig.add_trace(go.Bar(x=df_history['Symbol'], 
+            sqlEngine       = create_engine(myconfig.connection_str, pool_recycle=3600)
+
+            dbConnection    = sqlEngine.connect()
+
+            query = '''Select Distinct max_info.Symbol, max_info.Date, max_info.Adj_Close_Max, min_info.Date, min_info.Adj_Close_Min,
+                    Round(((max_info.Adj_Close_Max-min_info.Adj_Close_Min)/min_info.Adj_Close_Min)*100,2) Profits
+                    from 
+                        (
+                    select distinct h1.Symbol, h1.Date, Round(h1.Adj_close,3) Adj_Close_Max from history h1 
+                    JOIN # Derived Query 1
+                        (Select Symbol, max(date) max_date from history where DATE(Date) between %(dstart)s  and %(dfinish)s Group By Symbol) max_qry
+                    On h1.Symbol = max_qry.Symbol and h1.Date = max_qry.max_date ) max_info
+                        JOIN (Select Distinct Symbol from history ) Symbol # Derived Query 2
+                        On max_info.Symbol = Symbol.Symbol #Join Derived Query 1 and 2
+                    JOIN (select distinct h2.Symbol, h2.Date, Round(h2.Adj_close,3) Adj_Close_Min from history h2 
+                        JOIN # Derived Query 3
+                        (Select Symbol, Date(min(date)) min_date from history where DATE(Date) between %(dstart)s  and %(dfinish)s Group By Symbol) min_qry
+                            On h2.Symbol = min_qry.Symbol and h2.Date = min_qry.min_date) min_info
+                        On Symbol.Symbol = min_info.Symbol #Join the Derivery Qry 2 and 3
+                        Order By 6 Desc
+                        Limit 20'''
+            df_history  = pd.read_sql(query, dbConnection, params=({"dstart":begin_date,"dfinish":end_date}))
+            #history_data = (df_history.assign(Date=lambda data: pd.to_datetime(data["Date"], format="%Y-%m-%d")).sort_values(by="Date")) 
+            #print(df_history)
+
+            bar_fig = go.Figure()
+    
+            bar_fig.add_trace(go.Bar(x=df_history['Symbol'], 
                         y=df_history['Profits'],
                         marker_color='green',
                         name="Profit"
                         ))
-    dbConnection.close()
+            dbConnection.close()
     
-    bar_fig.update_yaxes(ticksuffix="%")
-    return bar_fig
+            bar_fig.update_yaxes(ticksuffix="%")
+            return bar_fig
 
+    overview_fig = go.Figure()
+    
+    overview_fig.add_trace(go.Bar(x=top_20_kpi['Symbol'], 
+                        y=top_20_kpi['KPI'],
+                        marker_color='green',
+                        name=kpi_filter
+                        ))
+
+    
+    #bar_fig.update_yaxes(ticksuffix="%")
+    return overview_fig
 
 
 def datepickerfunc(datedata):
@@ -259,17 +298,18 @@ app.layout = html.Div(
                     children=[
                         html.Div(children="KPI", className="menu-title"),
                         dcc.Dropdown(
-                            id="kpi-filter",
-                            options=[
-                                {
-                                    "label": avocado_type.title(),
-                                    "value": avocado_type,
-                                }
-                                for avocado_type in avocado_types
-                            ],
-                            value="profit",
+                           id="kpi-filter",
+                           options={
+                                "Profit": 'Profit',
+                                "PERatio": 'Price-to-Earnings',
+                                "PEGRatio": 'PEG Ratio',
+                                "PriceToBookRatio": 'Price-to-Book',
+                                "Beta": 'Beta',
+                                "Graham_Number": 'Graham Number'
+                            },
+                            value= "Profit",
                             clearable=False,
-                            searchable=False,
+                            #searchable=False,
                             className="dropdown",
                         ),
                     ],
@@ -402,7 +442,7 @@ app.layout = html.Div(
                         config={"displayModeBar": False},
                        # figure=macd_graph(),
                     ),
-                    className="card-row",
+                    className="card-row2 full-row",
                    ),
                  html.Div(
                     children=dcc.Graph(
@@ -410,10 +450,9 @@ app.layout = html.Div(
                         config={"displayModeBar": False},
                        # figure=macd_graph(),
                     ),
-                    className="card-row",
+                    className="card-row2 full-row",
                    ),  
-                ]
-               )
+                ], className="cards-side2")
             ],
             className="wrapper",
         ),
@@ -424,14 +463,15 @@ dbConnection.close()
 
 @app.callback(
     Output("profit-chart", "figure"),
+    Input("kpi-filter", "value"),
     Input("date-range-kpi", "start_date"),
     Input("date-range-kpi", "end_date"),
 
 )
 
-def update_kpis(start_date, end_date): 
+def update_kpis(kpi,start_date, end_date): 
     
-    return profit_return(start_date,end_date)
+    return profit_return(kpi,start_date,end_date)
 
 
 @app.callback(
@@ -460,7 +500,7 @@ def update_charts(symbol, years_return, start_date, end_date):
         dynamic_style = {'color': 'red'}
 
     profit_return_value = f"Date Range Return: {percent_return}%"
-    period_of_returns = f"The Average Return for {years_return} year(s) is {average_returns}%" 
+    period_of_returns = f"The Average Annual Return for {years_return} year(s) is {average_returns}%" 
     macd_chart = macd_graph(symbol, start_date, end_date)
     price_chart_figure = {
         "data": [

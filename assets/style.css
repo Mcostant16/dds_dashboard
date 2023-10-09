@@ -61,11 +61,29 @@ body {
 	display: flex;
     justify-content: space-evenly;
 }
+
+.cards-side2 {
+	display: flex;
+    justify-content: space-evenly;
+}	
+
+.full-row {
+	  flex: 0 0 90%; 
+}	
+
 .card-row {
 	margin-left: 24px;
 	margin-bottom: 24px;
     box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.18);
+	
 }
+.card-row2 {
+	margin-left: 24px;
+	margin-bottom: 24px;
+    box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.18);
+	width: auto;
+}
+
 .kpi-menu {
     height: 112px;
     width: 700px;
