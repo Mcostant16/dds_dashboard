@@ -71,6 +71,9 @@ body {
 	  flex: 0 0 90%; 
 }	
 
+.company {
+font-weight:bold; 
+}	
 .card-row {
 	margin-left: 24px;
 	margin-bottom: 24px;
@@ -84,6 +87,11 @@ body {
 	width: auto;
 }
 
+.card-row3 {
+
+    box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.18);
+	text-align: center;
+}
 .kpi-menu {
     height: 112px;
     width: 700px;

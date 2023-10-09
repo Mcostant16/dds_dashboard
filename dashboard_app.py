@@ -57,29 +57,29 @@ datepickerdata = pd.read_sql(query, dbConnection)
 
 def profit_return(kpi_filter,begin_date, end_date):
     overviewData[["PERatio", "PEGRatio",'PriceToBookRatio','Beta','Graham_Number']] = overviewData[["PERatio", "PEGRatio",'PriceToBookRatio','Beta','Graham_Number']].apply(pd.to_numeric, errors='coerce')
-    print(kpi_filter)
+    #print(kpi_filter)
     match kpi_filter:
 
         case 'PERatio':
-            print("PERatio case statement")
+            #print("PERatio case statement")
             top_20_kpi = overviewData[['Symbol','PERatio']].sort_values(by ='PERatio').head(20).copy()
             top_20_kpi.columns = ["Symbol", "KPI"]
-            print(top_20_kpi)
+            #print(top_20_kpi)
         case 'PEGRatio':
-            print("PEGRatio case statement 2nd is working!")
+            #print("PEGRatio case statement 2nd is working!")
             top_20_kpi = overviewData[['Symbol','PEGRatio']].sort_values(by ='PEGRatio',key=abs).head(20).copy()
             top_20_kpi.columns = ["Symbol", "KPI"]
         case 'PriceToBookRatio':
-            print("PEGRatio case statement 2nd is working!")
+            #print("PEGRatio case statement 2nd is working!")
             top_20_kpi = overviewData[['Symbol','PriceToBookRatio']].sort_values(by ='PriceToBookRatio').head(20).copy()
             top_20_kpi.columns = ["Symbol", "KPI"]
         case 'Beta':
-            print("PEGRatio case statement 2nd is working!")
+            #print("PEGRatio case statement 2nd is working!")
             top_20_kpi = overviewData[['Symbol','Beta']].sort_values(by ='Beta').head(20).copy()
             top_20_kpi.columns = ["Symbol", "KPI"]  
         case 'Graham_Number':
-            print("PEGRatio case statement 2nd is working!")
-            top_20_kpi = overviewData[['Symbol','Value_Stocks']].sort_values(by ='Value_Stocks', ascending=False).head(20).copy()
+            #print("PEGRatio case statement 2nd is working!")
+            top_20_kpi = overviewData[['Symbol','Value_Stocks']].sort_values(by ='Value_Stocks', ascending=False).tail(-1).head(20).copy()
             top_20_kpi.columns = ["Symbol", "KPI"]                   
         case _:
 
@@ -117,8 +117,9 @@ def profit_return(kpi_filter,begin_date, end_date):
                         name="Profit"
                         ))
             dbConnection.close()
-    
+
             bar_fig.update_yaxes(ticksuffix="%")
+            bar_fig.update_layout(title=kpi_filter + " KPI")
             return bar_fig
 
     overview_fig = go.Figure()
@@ -129,7 +130,7 @@ def profit_return(kpi_filter,begin_date, end_date):
                         name=kpi_filter
                         ))
 
-    
+    overview_fig.update_layout(title=kpi_filter + " KPI")
     #bar_fig.update_yaxes(ticksuffix="%")
     return overview_fig
 
@@ -145,8 +146,8 @@ def generate_query(chart_symbol, years_back, start_date, end_date):
     query = "SELECT  distinct * FROM history where Symbol = %(symbol)s "
     df_history  = pd.read_sql(query, dbConnection, params=({"symbol":chart_symbol}))
     history_data = (df_history.assign(Date=lambda data: pd.to_datetime(data["Date"], format="%Y-%m-%d")).sort_values(by="Date")) 
-    print(df_history)
-    print(history_data.groupby(pd.DatetimeIndex(history_data.Date).to_period('Y')).nth([0,-1]))
+    #print(df_history)
+    #print(history_data.groupby(pd.DatetimeIndex(history_data.Date).to_period('Y')).nth([0,-1]))
     #begin_end_year = history_data.groupby(pd.DatetimeIndex(history_data.Date).to_period('Y')).nth([0,-1])
     begin_year = history_data[['Symbol','Date','Adj_Close']].groupby(pd.DatetimeIndex(history_data.Date).to_period('Y')).nth([0]).copy()
     begin_year['Year'] = begin_year['Date'].dt.year
@@ -158,15 +159,15 @@ def generate_query(chart_symbol, years_back, start_date, end_date):
 
     merged_dataframe['Profits'] = ((merged_dataframe['Adj_Close_y'] - merged_dataframe['Adj_Close_x']) / merged_dataframe['Adj_Close_x'])*100
 
-    print(merged_dataframe)
+    #print(merged_dataframe)
 
     return_history = merged_dataframe.sort_values(by="Year",ascending=False).head(int(years_back))
 
     average_return = round(return_history['Profits'].mean(),2)
 
-    print(average_return)
+    #print(average_return)
 
-    print(return_history)
+    #print(return_history)
 
     annual_bar_fig = go.Figure()
     
@@ -178,7 +179,7 @@ def generate_query(chart_symbol, years_back, start_date, end_date):
     dbConnection.close()
     
     annual_bar_fig.update_yaxes(ticksuffix="%")
-
+    annual_bar_fig.update_layout(title='Yearly Return for ' + chart_symbol)
     #return the query ,annual bar Figure , and average return variables from function to pass up to app components
     return history_data.query(
             "Symbol == @chart_symbol"
@@ -248,7 +249,7 @@ def generate_table(qry_symbol, max_rows=26):
         [html.Tr([
             html.Td(todf.iloc[i][col]) for col in todf.columns
         ]) for i in range(min(len(todf), max_rows))]
-    )
+    ), filtered_o_data[['Name','Description']]
 
 #symbols = dashboardData["Symbol"] + "-" + dashboardData["Security"]
 
@@ -345,13 +346,16 @@ app.layout = html.Div(
             className="wrapper",
         ),
         html.Div(children=[
-                        html.P("Some stuff to test"
+                        html.P(
+                            #"Some stuff to test"
                         # generate_table(df)
-                        
+                        id="Company-Name",
+                        className="company"
                         ),
-                        html.P("Some more Jargan"), 
-                ],
-                className="right_header2 card-row"),
+                        html.P(id="Company-Description",
+                               ), 
+                        ],
+                className="card-row3 wrapper"),
             
         html.Div(
             children=[
@@ -492,7 +496,7 @@ def update_charts(symbol, years_return, start_date, end_date):
     begin_price = filtered_data["Adj_Close"].iloc[0]
     end_price = filtered_data["Adj_Close"].iloc[-1] 
     percent_return = round(((end_price - begin_price)/begin_price)*100,2)
-    print(percent_return)
+    #print(percent_return)
     
     if percent_return > 0:
         dynamic_style = {'color': 'green'}
@@ -542,13 +546,15 @@ def update_charts(symbol, years_return, start_date, end_date):
 
 @app.callback(
     Output("stock-table", "children"),
+    Output("Company-Name", "children"),
+    Output("Company-Description", "children"),
     Input("region-filter", "value")
 
 )
 
 def update_table(symbol): 
-    
-    return generate_table(symbol)
+    overview_df, company_info = generate_table(symbol)
+    return overview_df, company_info.iloc[0]['Name'], company_info.iloc[0]['Description']
 
 
 
