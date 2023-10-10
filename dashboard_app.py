@@ -227,8 +227,8 @@ def macd_graph(macd_symbol,start_d,end_d):
     #fig.show()
 
 def generate_table(qry_symbol, max_rows=26):
-    data3 = {'Cap' : ['A', 'B', 'C', ], 'non-Cap' : ['a','b','c', ]}
-    df = pd.DataFrame(data3)
+    #data3 = {'Cap' : ['A', 'B', 'C', ], 'non-Cap' : ['a','b','c', ]} #Headers
+    #df = pd.DataFrame(data3)
     #print(df)
     filtered_o_data = overviewData.query(
         "Symbol == @qry_symbol"
@@ -244,7 +244,7 @@ def generate_table(qry_symbol, max_rows=26):
     #i need to iterate through rows instead of columns now
     return html.Table(
         # Header
-        [html.Tr([html.Th(col) for col in df.columns]) ] +
+        # [html.Tr([html.Th(col) for col in df.columns]) ] +
         # Body
         [html.Tr([
             html.Td(todf.iloc[i][col]) for col in todf.columns
@@ -257,8 +257,8 @@ def generate_table(qry_symbol, max_rows=26):
 
 symbols = dashboardData["Symbol"].sort_values().unique()
 
-regions = data["region"].sort_values().unique() 
-avocado_types = data["type"].sort_values().unique()
+#regions = data["region"].sort_values().unique() 
+#avocado_types = data["type"].sort_values().unique()
 
 external_stylesheets = [
     {
