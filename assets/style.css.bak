@@ -2,7 +2,7 @@ body {
     font-family: "Lato", sans-serif;
     margin: 0;
     background-color: #F7F7F7;
-	width: 100vw;
+	/*width: 100vw;
     height: 100vh;
 	/*min-width: 1850px;*/
 }
@@ -23,8 +23,8 @@ body {
 .right_header2 {
 		/*color: white;
 		/*float: right; */
-	padding-right: 50px;
-    padding-left: 50px;
+	padding-right: 30px;
+    padding-left: 30px;
 	 /* background-color: white; */
 	  color:#000000;
 	  bordercolor: white;
@@ -55,6 +55,15 @@ body {
     margin-top: 32px;
 }
 
+.wrapper2 {
+    margin-right: auto;
+    margin-left: auto;
+
+    padding-right: 10px;
+    padding-left: 10px;
+    margin-top: 32px;
+}
+
 .card {
     margin-bottom: 24px;
     box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.18);
@@ -62,13 +71,14 @@ body {
 
 .cards-side {
 	display: flex;
-    justify-content: space-evenly;
-	flex: 1 1 auto;
+	justify-content: center;
+	justify-content: space-between; 
 }
 
 .cards-side2 {
 	display: flex;
-    justify-content: space-evenly;
+    justify-content: center;
+	justify-content: space-between; 
 }	
 
 .full-row {
@@ -87,7 +97,7 @@ font-weight:bold;
 	margin-left: 24px;
 	margin-bottom: 24px;
     box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.18);
-	width: auto;
+	width: 100%;
 }
 
 .card-row3 {
@@ -117,6 +127,8 @@ font-weight:bold;
     box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.18);
 }
 
+
+
 .Select-control {
     width: 256px;
     height: 48px;
@@ -136,3 +148,4 @@ font-weight:bold;
     font-weight: bold;
     color: #079A82;
 }
+

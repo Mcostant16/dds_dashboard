@@ -1,8 +1,8 @@
 import pandas as pd
 from datetime import date, timedelta
 from sqlalchemy import create_engine
-import plotly
-import random
+#import plotly
+#import random
 import plotly.graph_objs as go
 #import pymysql
 from ta.trend import MACD
@@ -434,7 +434,7 @@ app.layout = html.Div(
                         config={"displayModeBar": False},
                        # figure=macd_graph(),
                     ),
-                    className="card-row2 full-row",
+                    className="card-row2",
                    ),
                  html.Div(
                     children=dcc.Graph(
@@ -442,11 +442,11 @@ app.layout = html.Div(
                         config={"displayModeBar": False},
                        # figure=macd_graph(),
                     ),
-                    className="card-row2 full-row",
+                    className="card-row2",
                    ),  
                 ], className="cards-side2")
             ],
-            className="wrapper",
+            className="wrapper2",
         ),
     ]
 )
