@@ -53,7 +53,7 @@ data = (
     .assign(Date=lambda data: pd.to_datetime(data["Date"], format="%Y-%m-%d"))
     .sort_values(by="Date")
 )
-datepickerdata = pd.read_sql(query, dbConnection)
+#datepickerdata = pd.read_sql(query, dbConnection)
 
 def profit_return(kpi_filter,begin_date, end_date):
     overviewData[["PERatio", "PEGRatio",'PriceToBookRatio','Beta','Graham_Number']] = overviewData[["PERatio", "PEGRatio",'PriceToBookRatio','Beta','Graham_Number']].apply(pd.to_numeric, errors='coerce')
@@ -135,8 +135,7 @@ def profit_return(kpi_filter,begin_date, end_date):
     return overview_fig
 
 
-def datepickerfunc(datedata):
-    datepickerdata = datedata
+
 
 def generate_query(chart_symbol, years_back, start_date, end_date):
     sqlEngine       = create_engine(myconfig.connection_str, pool_recycle=3600)
@@ -260,16 +259,8 @@ symbols = dashboardData["Symbol"].sort_values().unique()
 #regions = data["region"].sort_values().unique() 
 #avocado_types = data["type"].sort_values().unique()
 
-external_stylesheets = [
-    {
-        "href": (
-            "https://fonts.googleapis.com/css2?"
-            "family=Lato:wght@400;700&display=swap"
-        ),
-        "rel": "stylesheet",
-    },
-]
-app = Dash(__name__, external_stylesheets=external_stylesheets)
+
+app = Dash(__name__)
 app.title = "Stock Market Analytics: Understand Stocks!"
 
 
