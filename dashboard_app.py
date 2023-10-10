@@ -28,7 +28,7 @@ conn = mysql.connector.connect(
   database="stock"
 )
 '''
-st = "AAPL"
+#st = "AAPL"
 ##query = "SELECT * FROM overview where Symbol = %s "
 query = '''
 select Distinct Ov1.*,
@@ -48,11 +48,7 @@ df_sp = pd.read_sql(query_sp, dbConnection)
 dashboardData = (df_sp) 
 overviewData = (df)
 #history_data = (df_history.assign(Date=lambda data: pd.to_datetime(data["Date"], format="%Y-%m-%d")).sort_values(by="Date")) 
-data = (
-    pd.read_csv("E:/Users/mecostantino/OneDrive - Pellissippi State Community College/Desktop/ETSU School/CSCI 5050 Decision Support Systems/Decision SUpport Systems Final Project/materials-python-dash/avocado_analytics_3/avocado.csv")
-    .assign(Date=lambda data: pd.to_datetime(data["Date"], format="%Y-%m-%d"))
-    .sort_values(by="Date")
-)
+
 #datepickerdata = pd.read_sql(query, dbConnection)
 
 def profit_return(kpi_filter,begin_date, end_date):
