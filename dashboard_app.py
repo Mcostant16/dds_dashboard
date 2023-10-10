@@ -54,6 +54,7 @@ overviewData = (df)
 def profit_return(kpi_filter,begin_date, end_date):
     overviewData[["PERatio", "PEGRatio",'PriceToBookRatio','Beta','Graham_Number']] = overviewData[["PERatio", "PEGRatio",'PriceToBookRatio','Beta','Graham_Number']].apply(pd.to_numeric, errors='coerce')
     #print(kpi_filter)
+    print(kpi_filter,begin_date,end_date)
     match kpi_filter:
 
         case 'PERatio':
@@ -80,7 +81,7 @@ def profit_return(kpi_filter,begin_date, end_date):
         case _:
 
     
-            sqlEngine       = create_engine(myconfig.connection_str, pool_recycle=3600)
+            #sqlEngine       = create_engine(myconfig.connection_str, pool_recycle=3600)
 
             dbConnection    = sqlEngine.connect()
 
@@ -134,10 +135,10 @@ def profit_return(kpi_filter,begin_date, end_date):
 
 
 def generate_query(chart_symbol, years_back, start_date, end_date):
-    sqlEngine       = create_engine(myconfig.connection_str, pool_recycle=3600)
+    #sqlEngine       = create_engine(myconfig.connection_str, pool_recycle=3600)
 
     dbConnection    = sqlEngine.connect()
-
+    print(chart_symbol)
     query = "SELECT  distinct * FROM history where Symbol = %(symbol)s "
     df_history  = pd.read_sql(query, dbConnection, params=({"symbol":chart_symbol}))
     history_data = (df_history.assign(Date=lambda data: pd.to_datetime(data["Date"], format="%Y-%m-%d")).sort_values(by="Date")) 
@@ -288,14 +289,14 @@ app.layout = html.Div(
                         dcc.Dropdown(
                            id="kpi-filter",
                            options={
-                                "Profit": 'Profit',
+                                "Graham_Number": 'Graham Number',
                                 "PERatio": 'Price-to-Earnings',
                                 "PEGRatio": 'PEG Ratio',
                                 "PriceToBookRatio": 'Price-to-Book',
                                 "Beta": 'Beta',
-                                "Graham_Number": 'Graham Number'
+                                "Profit": 'Profit'
                             },
-                            value= "Profit",
+                            value= "Graham_Number",
                             clearable=False,
                             #searchable=False,
                             className="dropdown",
@@ -368,15 +369,15 @@ app.layout = html.Div(
                         dcc.Dropdown(
                             id="return-filter",
                             options={
-                                1: '1 Year',
-                                3: '3 Year',
-                                5: '5 Year',
-                                10: '10 Year',
-                                15: '15 Year',
-                                20: '20 Year',
-                                100 : 'Max'
+                                '1': '1 Year',
+                                '3': '3 Year',
+                                '5': '5 Year',
+                                '10': '10 Year',
+                                '15': '15 Year',
+                                '20': '20 Year',
+                                '100' : 'Max'
                             },
-                            value= 1,
+                            value= '1',
                             clearable=False,
                             #searchable=False,
                             className="dropdown",
